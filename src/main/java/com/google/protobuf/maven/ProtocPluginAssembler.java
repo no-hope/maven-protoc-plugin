@@ -2,15 +2,11 @@ package com.google.protobuf.maven;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.repository.RepositorySystem;
 import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.Os;
-import org.sonatype.aether.RepositorySystem;
-import org.sonatype.aether.RepositorySystemSession;
-import org.sonatype.aether.collection.CollectRequest;
-import org.sonatype.aether.graph.DependencyNode;
-import org.sonatype.aether.repository.RemoteRepository;
-import org.sonatype.aether.resolution.DependencyRequest;
-import org.sonatype.aether.util.graph.PreorderNodeListGenerator;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.repository.RemoteRepository;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -31,13 +27,13 @@ public class ProtocPluginAssembler {
 
     private final RepositorySystemSession repoSystemSession;
 
-    private final List<RemoteRepository> remoteRepos = new ArrayList<RemoteRepository>();
+    private final List<RemoteRepository> remoteRepos = new ArrayList<>();
 
     private final ProtocPlugin pluginDefinition;
 
     private final File pluginDirectory;
 
-    private final List<File> resolvedJars = new ArrayList<File>();
+    private final List<File> resolvedJars = new ArrayList<>();
 
     private final File pluginExecutableFile;
 
@@ -71,7 +67,8 @@ public class ProtocPluginAssembler {
             log.debug("plugin definition: " + pluginDefinition);
         }
 
-        resolvePluginDependencies();
+        // FIXME: plugins support
+        //resolvePluginDependencies();
 
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
             buildWindowsPlugin();
@@ -220,6 +217,8 @@ public class ProtocPluginAssembler {
         }
     }
 
+    /*
+    // FIXME: plugins support
     private void resolvePluginDependencies() throws MojoExecutionException {
         final CollectRequest collectRequest = new CollectRequest();
         collectRequest.setRoot(pluginDefinition.asDependency());
@@ -228,7 +227,8 @@ public class ProtocPluginAssembler {
         }
 
         try {
-            final DependencyNode node = repoSystem.collectDependencies(repoSystemSession, collectRequest).getRoot();
+            final DependencyNode node =
+                    repoSystem.collectDependencies(repoSystemSession, collectRequest).getRoot();
             final DependencyRequest request = new DependencyRequest(node, null);
             repoSystem.resolveDependencies(repoSystemSession, request);
             final PreorderNodeListGenerator nlg = new PreorderNodeListGenerator();
@@ -242,7 +242,10 @@ public class ProtocPluginAssembler {
         } catch (Exception e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
+
+        throw new MojoExecutionException("fuck");
     }
+    */
 
     private String getWinrun4jExecutablePath() {
         return "winrun4j/WinRun4J" + pluginDefinition.getWinJvmDataModel() + ".exe";

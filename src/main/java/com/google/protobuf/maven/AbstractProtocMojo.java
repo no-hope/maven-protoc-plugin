@@ -12,15 +12,14 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
+import org.apache.maven.repository.RepositorySystem;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
 import org.apache.maven.toolchain.java.DefaultJavaToolChain;
 import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.io.RawInputStreamFacade;
-import org.sonatype.aether.RepositorySystem;
-import org.sonatype.aether.RepositorySystemSession;
-import org.sonatype.aether.repository.RemoteRepository;
+import org.eclipse.aether.repository.RemoteRepository;
 import org.sonatype.plexus.build.incremental.BuildContext;
 
 import java.io.File;
@@ -33,16 +32,12 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.*;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.lang.Math.max;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
-import static org.codehaus.plexus.util.FileUtils.cleanDirectory;
-import static org.codehaus.plexus.util.FileUtils.copyStreamToFile;
-import static org.codehaus.plexus.util.FileUtils.getFiles;
+import static org.codehaus.plexus.util.FileUtils.*;
 
 /**
  * Abstract Mojo implementation.
@@ -110,11 +105,11 @@ abstract class AbstractProtocMojo extends AbstractMojo {
      *
      * @since 0.3.0
      */
-    @Parameter(
-            defaultValue = "${repositorySystemSession}",
-            readonly = true
-    )
-    private RepositorySystemSession repoSystemSession;
+    //@Parameter(
+    //        defaultValue = "${repositorySystemSession}",
+    //        readonly = true
+    //)
+    //private RepositorySystemSession repoSystemSession;
 
     /**
      * Remote repositories for artifact resolution.
@@ -361,9 +356,10 @@ abstract class AbstractProtocMojo extends AbstractMojo {
                         cleanDirectory(descriptorSetOutputDirectory);
                     }
 
-                    if (protocPlugins != null) {
-                        createProtocPlugins();
-                    }
+                    // FIXME: plugins support
+                    //if (protocPlugins != null) {
+                    //    createProtocPlugins();
+                    //}
 
                     //get toolchain from context
                     final Toolchain tc = toolchainManager.getToolchainFromBuildContext("protobuf", session); //NOI18N
@@ -445,6 +441,8 @@ abstract class AbstractProtocMojo extends AbstractMojo {
      *
      * @since 0.3.0
      */
+    /*
+    // FIXME: plugins support
     protected void createProtocPlugins() throws MojoExecutionException {
         final String javaHome = detectJavaHome();
 
@@ -468,6 +466,7 @@ abstract class AbstractProtocMojo extends AbstractMojo {
             assembler.execute();
         }
     }
+    */
 
     /**
      * Attempts to detect java home directory, using {@code jdk} toolchain if available,

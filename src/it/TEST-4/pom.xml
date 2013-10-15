@@ -12,8 +12,8 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>com.google.protobuf.tools</groupId>
-                <artifactId>maven-protoc-plugin</artifactId>
+                <groupId>org.no-hope</groupId>
+                <artifactId>protoc-maven-plugin</artifactId>
                 <version>@project.version@</version>
                 <executions>
                     <execution>

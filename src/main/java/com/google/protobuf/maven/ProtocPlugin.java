@@ -2,8 +2,8 @@ package com.google.protobuf.maven;
 
 import org.apache.maven.plugin.logging.Log;
 import org.codehaus.plexus.util.Os;
-import org.sonatype.aether.graph.Dependency;
-import org.sonatype.aether.util.artifact.DefaultArtifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.graph.Dependency;
 
 import java.io.File;
 import java.util.Collections;
@@ -143,7 +143,7 @@ public class ProtocPlugin {
         }
     }
 
-    private boolean archDirectoryExists(String arch) {
+    private boolean archDirectoryExists(final String arch) {
         return javaHome != null
                 && (new File(javaHome, "jre/lib/" + arch).isDirectory()
                 || new File(javaHome, "lib/" + arch).isDirectory());

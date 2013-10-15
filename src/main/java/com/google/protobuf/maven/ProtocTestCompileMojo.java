@@ -70,16 +70,13 @@ public final class ProtocTestCompileMojo extends AbstractProtocMojo {
     protected void attachFiles() {
         project.addTestCompileSourceRoot(outputDirectory.getAbsolutePath());
         projectHelper.addTestResource(project, protoTestSourceRoot.getAbsolutePath(),
-                ImmutableList.of("**/*.proto"), ImmutableList.of());
+                ImmutableList.of("**/*.proto"), ImmutableList.<String> of());
         buildContext.refresh(outputDirectory);
     }
 
     @Override
     protected List<Artifact> getDependencyArtifacts() {
-        // TODO(gak): maven-project needs generics
-        @SuppressWarnings("unchecked")
-        List<Artifact> testArtifacts = project.getTestArtifacts();
-        return testArtifacts;
+        return project.getTestArtifacts();
     }
 
     @Override
