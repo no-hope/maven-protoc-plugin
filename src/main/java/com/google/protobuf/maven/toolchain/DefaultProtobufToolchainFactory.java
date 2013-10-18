@@ -19,9 +19,7 @@ import java.io.File;
  * @author Sergei Ivanov
  * @since 0.2.0
  */
-@Component(
-        role = ToolchainFactory.class,
-        hint = "protobuf",
+@Component(role = ToolchainFactory.class, hint = "protobuf",
         description = "A default factory for 'protobuf' toolchains")
 public class DefaultProtobufToolchainFactory implements ToolchainFactory, LogEnabled {
 

@@ -140,7 +140,8 @@ final class Protoc {
             }
         }
         cl.setExecutable(executable);
-        cl.addArguments(buildProtocCommand().toArray(new String[] {}));
+        final ImmutableList<String> strings = buildProtocCommand();
+        cl.addArguments(strings.toArray(new String[strings.size()]));
         return CommandLineUtils.executeCommandLine(cl, null, output, error);
     }
 
@@ -207,7 +208,7 @@ final class Protoc {
                 log.debug(LOG_PREFIX + "Java output directory:");
                 log.debug(LOG_PREFIX + ' ' + javaOutputDirectory);
 
-                if (plugins.size() > 0) {
+                if (!plugins.isEmpty()) {
                     log.debug(LOG_PREFIX + "Plugins for Java output:");
                     for (final ProtocPlugin plugin : plugins) {
                         log.debug(LOG_PREFIX + plugin.getId());

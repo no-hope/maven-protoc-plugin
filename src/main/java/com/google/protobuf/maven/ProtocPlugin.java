@@ -2,8 +2,6 @@ package com.google.protobuf.maven;
 
 import org.apache.maven.plugin.logging.Log;
 import org.codehaus.plexus.util.Os;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.graph.Dependency;
 
 import java.io.File;
 import java.util.Collections;
@@ -19,55 +17,21 @@ import static com.google.common.base.Preconditions.checkState;
  * @since 0.3.0
  */
 public class ProtocPlugin {
-
     private static final String DATA_MODEL_SYSPROP = "sun.arch.data.model";
-
     private static final String WIN_JVM_DATA_MODEL_32 = "32";
-
     private static final String WIN_JVM_DATA_MODEL_64 = "64";
-
-
     private String id;
-
-    private String groupId;
-
-    private String artifactId;
-
-    private String version;
-
-    private String scope = "runtime";
-
     private String mainClass;
-
     private String javaHome;
-
     // Assuming we're running a HotSpot JVM, use the data model of the
     // current JVM as the default. This property is only relevant on
     // Windows where we need to pick the right version of the WinRun4J executable.
     private String winJvmDataModel;
-
     private List<String> args;
-
     private List<String> jvmArgs;
 
     public String getId() {
         return id;
-    }
-
-    public String getGroupId() {
-        return groupId;
-    }
-
-    public String getArtifactId() {
-        return artifactId;
-    }
-
-    public String getVersion() {
-        return version;
-    }
-
-    public String getScope() {
-        return scope;
     }
 
     public String getMainClass() {
@@ -94,19 +58,13 @@ public class ProtocPlugin {
         return winJvmDataModel;
     }
 
-    public String getPluginName() {
-        return "protoc-gen-" + id;
-    }
-
     /**
      * Validate the state of this plugin specification.
+     *
      * @throws IllegalStateException if properties are incorrect or are missing
      */
     public void validate(final Log log) {
         checkState(id != null, "id must be set in protocPlugin definition");
-        checkState(groupId != null, "groupId must be set in protocPlugin definition");
-        checkState(artifactId != null, "artifactId must be set in protocPlugin definition");
-        checkState(version != null, "version must be set in protocPlugin definition");
         checkState(mainClass != null, "mainClass must be set in protocPlugin definition");
         checkState(javaHome != null && new File(javaHome).isDirectory(), "javaHome is invalid: " + javaHome);
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
@@ -145,8 +103,8 @@ public class ProtocPlugin {
 
     private boolean archDirectoryExists(final String arch) {
         return javaHome != null
-                && (new File(javaHome, "jre/lib/" + arch).isDirectory()
-                || new File(javaHome, "lib/" + arch).isDirectory());
+               && (new File(javaHome, "jre/lib/" + arch).isDirectory()
+                   || new File(javaHome, "lib/" + arch).isDirectory());
     }
 
     /**
@@ -163,23 +121,19 @@ public class ProtocPlugin {
         }
     }
 
-    public Dependency asDependency() {
-        return new Dependency(new DefaultArtifact(groupId, artifactId, "jar", version), scope);
+    public String getPluginName() {
+        return "protoc-gen-" + id;
     }
 
     @Override
     public String toString() {
         return "ProtocPlugin{" +
-                "id='" + id + '\'' +
-                ", groupId='" + groupId + '\'' +
-                ", artifactId='" + artifactId + '\'' +
-                ", version='" + version + '\'' +
-                ", scope='" + scope + '\'' +
-                ", mainClass='" + mainClass + '\'' +
-                ", javaHome='" + javaHome + '\'' +
-                ", winJvmDataModel='" + winJvmDataModel + '\'' +
-                ", args=" + args +
-                ", jvmArgs=" + jvmArgs +
-                '}';
+               "id='" + id + '\'' +
+               ", mainClass='" + mainClass + '\'' +
+               ", javaHome='" + javaHome + '\'' +
+               ", winJvmDataModel='" + winJvmDataModel + '\'' +
+               ", args=" + args +
+               ", jvmArgs=" + jvmArgs +
+               '}';
     }
 }

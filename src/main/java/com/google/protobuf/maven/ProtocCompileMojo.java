@@ -63,9 +63,8 @@ public final class ProtocCompileMojo extends AbstractProtocMojo {
     @Override
     protected List<Artifact> getDependencyArtifacts() {
         // TODO(gak): maven-project needs generics
-        @SuppressWarnings("unchecked")
-        List<Artifact> compileArtifacts = project.getCompileArtifacts();
-        return compileArtifacts;
+
+        return project.getCompileArtifacts();
     }
 
     @Override

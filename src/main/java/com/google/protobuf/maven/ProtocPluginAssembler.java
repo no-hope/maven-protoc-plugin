@@ -1,12 +1,10 @@
 package com.google.protobuf.maven;
 
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.repository.RepositorySystem;
 import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.Os;
-import org.eclipse.aether.RepositorySystemSession;
-import org.eclipse.aether.repository.RemoteRepository;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -23,35 +21,22 @@ import java.util.List;
  */
 public class ProtocPluginAssembler {
 
-    private final RepositorySystem repoSystem;
-
-    private final RepositorySystemSession repoSystemSession;
-
-    private final List<RemoteRepository> remoteRepos = new ArrayList<>();
-
+    private final List<Artifact> artifacts;
     private final ProtocPlugin pluginDefinition;
-
     private final File pluginDirectory;
-
     private final List<File> resolvedJars = new ArrayList<>();
-
     private final File pluginExecutableFile;
-
     private final Log log;
 
     public ProtocPluginAssembler(
+            final List<Artifact> artifacts,
             final ProtocPlugin pluginDefinition,
-            final RepositorySystem repoSystem,
-            final RepositorySystemSession repoSystemSession,
-            final List<RemoteRepository> remoteRepos,
             final File pluginDirectory,
             final Log log) {
-        this.repoSystem = repoSystem;
-        this.repoSystemSession = repoSystemSession;
-        this.remoteRepos.addAll(remoteRepos);
         this.pluginDefinition = pluginDefinition;
         this.pluginDirectory = pluginDirectory;
         this.pluginExecutableFile = pluginDefinition.getPluginExecutableFile(pluginDirectory);
+        this.artifacts = artifacts;
         this.log = log;
     }
 
@@ -62,13 +47,11 @@ public class ProtocPluginAssembler {
      */
     public void execute() throws MojoExecutionException {
         pluginDefinition.validate(log);
-
         if (log.isDebugEnabled()) {
             log.debug("plugin definition: " + pluginDefinition);
         }
 
-        // FIXME: plugins support
-        //resolvePluginDependencies();
+        resolvePluginDependencies();
 
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
             buildWindowsPlugin();
@@ -77,6 +60,77 @@ public class ProtocPluginAssembler {
             buildUnixPlugin();
             pluginExecutableFile.setExecutable(true);
         }
+    }
+
+    private void resolvePluginDependencies() {
+        for (final Artifact pluginArtifact : artifacts) {
+            final File file = pluginArtifact.getFile();
+            resolvedJars.add(file);
+        }
+    }
+
+    private void buildUnixPlugin() throws MojoExecutionException {
+        createPluginDirectory();
+
+        final File javaLocation = new File(pluginDefinition.getJavaHome(), "bin/java");
+
+        if (log.isDebugEnabled()) {
+            log.debug("javaLocation=" + javaLocation.getAbsolutePath());
+        }
+
+        PrintWriter out = null;
+        try {
+            out = new PrintWriter(new FileWriter(pluginExecutableFile));
+            out.println("#!/bin/sh");
+            out.println();
+            out.print("CP=");
+            for (int i = 0; i < resolvedJars.size(); i++) {
+                if (i > 0) {
+                    out.print(":");
+                }
+                out.print("\"" + resolvedJars.get(i).getAbsolutePath() + "\"");
+            }
+            out.println();
+            out.print("ARGS=\"");
+            for (final String arg : pluginDefinition.getArgs()) {
+                out.print(arg + " ");
+            }
+            out.println("\"");
+            out.print("JVMARGS=\"");
+            for (final String jvmArg : pluginDefinition.getJvmArgs()) {
+                out.print(jvmArg + " ");
+            }
+            out.println("\"");
+            out.println();
+            out.println("\"" + javaLocation.getAbsolutePath() + "\" $JVMARGS -cp $CP "
+                        + pluginDefinition.getMainClass() + " $ARGS");
+            out.println();
+        } catch (IOException e) {
+            throw new MojoExecutionException("Could not write plugin script file: " + pluginExecutableFile, e);
+        } finally {
+            if (out != null) {
+                out.close();
+            }
+        }
+    }
+
+    private void copyWinRun4JExecutable() throws MojoExecutionException {
+        final String executablePath = getWinrun4jExecutablePath();
+        final URL url = Thread.currentThread().getContextClassLoader().getResource(executablePath);
+        if (url == null) {
+            throw new MojoExecutionException(
+                    "Could not locate WinRun4J executable at path: " + executablePath);
+        }
+        try {
+            FileUtils.copyURLToFile(url, pluginExecutableFile);
+        } catch (IOException e) {
+            throw new MojoExecutionException(
+                    "Could not copy WinRun4J executable to: " + pluginExecutableFile.getAbsolutePath(), e);
+        }
+    }
+
+    private String getWinrun4jExecutablePath() {
+        return "winrun4j/WinRun4J" + pluginDefinition.getWinJvmDataModel() + ".exe";
     }
 
     private void buildWindowsPlugin() throws MojoExecutionException {
@@ -139,115 +193,21 @@ public class ProtocPluginAssembler {
         }
     }
 
-    private File findJvmLocation(File javaHome, String... paths) {
-        for (String path : paths) {
-            File jvmLocation = new File(javaHome, path);
+    private void createPluginDirectory() throws MojoExecutionException {
+        pluginDirectory.mkdirs();
+        if (!pluginDirectory.isDirectory()) {
+            throw new MojoExecutionException("Could not create protoc plugin directory: "
+                                             + pluginDirectory.getAbsolutePath());
+        }
+    }
+
+    private static File findJvmLocation(final File javaHome, final String... paths) {
+        for (final String path : paths) {
+            final File jvmLocation = new File(javaHome, path);
             if (jvmLocation.isFile()) {
                 return jvmLocation;
             }
         }
         return null;
-    }
-
-    private void copyWinRun4JExecutable() throws MojoExecutionException {
-        final String executablePath = getWinrun4jExecutablePath();
-        final URL url = Thread.currentThread().getContextClassLoader().getResource(executablePath);
-        if (url == null) {
-            throw new MojoExecutionException(
-                    "Could not locate WinRun4J executable at path: " + executablePath);
-        }
-        try {
-            FileUtils.copyURLToFile(url, pluginExecutableFile);
-        } catch (IOException e) {
-            throw new MojoExecutionException(
-                    "Could not copy WinRun4J executable to: " + pluginExecutableFile.getAbsolutePath(), e);
-        }
-    }
-
-    private void buildUnixPlugin() throws MojoExecutionException {
-        createPluginDirectory();
-
-        final File javaLocation = new File(pluginDefinition.getJavaHome(), "bin/java");
-
-        if (log.isDebugEnabled()) {
-            log.debug("javaLocation=" + javaLocation.getAbsolutePath());
-        }
-
-        PrintWriter out = null;
-        try {
-            out = new PrintWriter(new FileWriter(pluginExecutableFile));
-            out.println("#!/bin/sh");
-            out.println();
-            out.print("CP=");
-            for (int i = 0; i < resolvedJars.size(); i++) {
-                if (i > 0) {
-                    out.print(":");
-                }
-                out.print("\"" + resolvedJars.get(i).getAbsolutePath() + "\"");
-            }
-            out.println();
-            out.print("ARGS=\"");
-            for (final String arg : pluginDefinition.getArgs()) {
-                out.print(arg + " ");
-            }
-            out.println("\"");
-            out.print("JVMARGS=\"");
-            for (final String jvmArg : pluginDefinition.getJvmArgs()) {
-                out.print(jvmArg + " ");
-            }
-            out.println("\"");
-            out.println();
-            out.println("\"" + javaLocation.getAbsolutePath() + "\" $JVMARGS -cp $CP "
-                    + pluginDefinition.getMainClass() + " $ARGS");
-            out.println();
-        } catch (IOException e) {
-            throw new MojoExecutionException("Could not write plugin script file: " + pluginExecutableFile, e);
-        } finally {
-            if (out != null) {
-                out.close();
-            }
-        }
-    }
-
-    private void createPluginDirectory() throws MojoExecutionException {
-        pluginDirectory.mkdirs();
-        if (!pluginDirectory.isDirectory()) {
-            throw new MojoExecutionException("Could not create protoc plugin directory: "
-                    + pluginDirectory.getAbsolutePath());
-        }
-    }
-
-    /*
-    // FIXME: plugins support
-    private void resolvePluginDependencies() throws MojoExecutionException {
-        final CollectRequest collectRequest = new CollectRequest();
-        collectRequest.setRoot(pluginDefinition.asDependency());
-        for (final RemoteRepository remoteRepo : remoteRepos) {
-            collectRequest.addRepository(remoteRepo);
-        }
-
-        try {
-            final DependencyNode node =
-                    repoSystem.collectDependencies(repoSystemSession, collectRequest).getRoot();
-            final DependencyRequest request = new DependencyRequest(node, null);
-            repoSystem.resolveDependencies(repoSystemSession, request);
-            final PreorderNodeListGenerator nlg = new PreorderNodeListGenerator();
-            node.accept(nlg);
-
-            resolvedJars.addAll(nlg.getFiles());
-
-            if (log.isDebugEnabled()) {
-                log.debug("resolved jars: " + resolvedJars);
-            }
-        } catch (Exception e) {
-            throw new MojoExecutionException(e.getMessage(), e);
-        }
-
-        throw new MojoExecutionException("fuck");
-    }
-    */
-
-    private String getWinrun4jExecutablePath() {
-        return "winrun4j/WinRun4J" + pluginDefinition.getWinJvmDataModel() + ".exe";
     }
 }

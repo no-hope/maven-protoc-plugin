@@ -14,7 +14,6 @@ import java.io.File;
  * @since 0.2.0
  */
 public class DefaultProtobufToolchain extends DefaultToolchain implements ProtobufToolchain {
-
     public static final String KEY_PROTOC_EXECUTABLE = "protocExecutable";
 
     protected DefaultProtobufToolchain(ToolchainModel model, Logger logger) {
@@ -23,9 +22,10 @@ public class DefaultProtobufToolchain extends DefaultToolchain implements Protob
 
     private String protocExecutable;
 
-    public String findTool(String toolName) {
+    @Override
+    public String findTool(final String toolName) {
         if ("protoc".equals(toolName)) {
-            File protoc = new File(FileUtils.normalize(getProtocExecutable()));
+            final File protoc = new File(FileUtils.normalize(getProtocExecutable()));
             if (protoc.exists()) {
                 return protoc.getAbsolutePath();
             }
@@ -33,14 +33,17 @@ public class DefaultProtobufToolchain extends DefaultToolchain implements Protob
         return null;
     }
 
+    @Override
     public String getProtocExecutable() {
         return this.protocExecutable;
     }
 
-    public void setProtocExecutable(String protocExecutable) {
+    @Override
+    public void setProtocExecutable(final String protocExecutable) {
         this.protocExecutable = protocExecutable;
     }
 
+    @Override
     public String toString() {
         return "PROTOC[" + getProtocExecutable() + "]";
     }

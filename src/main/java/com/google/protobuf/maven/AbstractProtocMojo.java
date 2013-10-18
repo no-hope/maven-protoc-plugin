@@ -19,7 +19,6 @@ import org.apache.maven.toolchain.java.DefaultJavaToolChain;
 import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.io.RawInputStreamFacade;
-import org.eclipse.aether.repository.RemoteRepository;
 import org.sonatype.plexus.build.incremental.BuildContext;
 
 import java.io.File;
@@ -49,11 +48,10 @@ import static org.codehaus.plexus.util.FileUtils.*;
  * @author Gregory Kick
  * @author David Trott
  * @author Brice Figureau
+ * @author <a href="mailto:ketoth.xupack@gmail.com">Ketoth Xupack</a>
  */
 abstract class AbstractProtocMojo extends AbstractMojo {
-
     private static final String PROTO_FILE_SUFFIX = ".proto";
-
     private static final String DEFAULT_INCLUDES = "**/*" + PROTO_FILE_SUFFIX;
 
     /**
@@ -78,6 +76,20 @@ abstract class AbstractProtocMojo extends AbstractMojo {
     @Component
     protected BuildContext buildContext;
 
+    @Parameter(
+            readonly = true,
+            required = true,
+            property = "project.remoteArtifactRepositories"
+    )
+    private java.util.List<ArtifactRepository> remoteRepositories;
+
+    @Parameter(
+            readonly = true,
+            required = true,
+            property = "plugin.artifacts"
+    )
+    protected List<Artifact> pluginArtifacts;
+
     /**
      * An optional tool chain manager.
      *
@@ -98,29 +110,10 @@ abstract class AbstractProtocMojo extends AbstractMojo {
      * @since 0.3.0
      */
     @Component
-    private RepositorySystem repoSystem;
+    protected RepositorySystem repoSystem;
 
-    /**
-     * Repository system session for artifact resolution.
-     *
-     * @since 0.3.0
-     */
-    //@Parameter(
-    //        defaultValue = "${repositorySystemSession}",
-    //        readonly = true
-    //)
-    //private RepositorySystemSession repoSystemSession;
-
-    /**
-     * Remote repositories for artifact resolution.
-     *
-     * @since 0.3.0
-     */
-    @Parameter(
-            defaultValue = "${project.remotePluginRepositories}",
-            readonly = true
-    )
-    private List<RemoteRepository> remoteRepos;
+    //@Component
+    //protected ArtifactFactory defaultArtifactFactory;
 
     /**
      * A directory where native launchers for java protoc plugins will be generated.
@@ -140,39 +133,28 @@ abstract class AbstractProtocMojo extends AbstractMojo {
      * If no {@code protobuf} toolchain is defined in the project,
      * the {@code protoc} executable in the {@code PATH} is used.
      */
-    @Parameter(
-            required = false,
-            property = "protocExecutable"
-    )
+    @Parameter(required = false, property = "protocExecutable")
     private String protocExecutable;
 
     /**
      * Additional source paths for {@code .proto} definitions.
      */
-    @Parameter(
-            required = false
-    )
+    @Parameter(required = false)
     private File[] additionalProtoPathElements = {};
 
     /**
      * Since {@code protoc} cannot access jars, proto files in dependencies are extracted to this location
      * and deleted on exit. This directory is always cleaned during execution.
      */
-    @Parameter(
-            required = true,
-            defaultValue = "${project.build.directory}/protoc-dependencies"
-    )
+    @Parameter(required = true,
+            defaultValue = "${project.build.directory}/protoc-dependencies")
     private File temporaryProtoFileDirectory;
 
     /**
      * This is the path to the local maven {@code repository}.
      */
-    @Parameter(
-            readonly = true,
-            required = true,
-            property = "localRepository"
-    )
-    private ArtifactRepository localRepository;
+    @Parameter(readonly = true, required = true, property = "localRepository")
+    protected ArtifactRepository localRepository;
 
     /**
      * Set this to {@code false} to disable hashing of dependent jar paths.
@@ -181,10 +163,7 @@ abstract class AbstractProtocMojo extends AbstractMojo {
      * Normally these paths are hashed (MD5) to avoid issues with long file names on windows.
      * However if this property is set to {@code false} longer paths will be used.
      */
-    @Parameter(
-            required = true,
-            defaultValue = "true"
-    )
+    @Parameter(required = true, defaultValue = "true")
     private boolean hashDependentPaths;
 
     /**
@@ -197,9 +176,7 @@ abstract class AbstractProtocMojo extends AbstractMojo {
      * &lt;/includes&gt;<br/>
      * </code>
      */
-    @Parameter(
-            required = false
-    )
+    @Parameter(required = false)
     private Set<String> includes = ImmutableSet.of(DEFAULT_INCLUDES);
 
     /**
@@ -211,9 +188,7 @@ abstract class AbstractProtocMojo extends AbstractMojo {
      * &lt;/excludes&gt;<br/>
      * </code>
      */
-    @Parameter(
-            required = false
-    )
+    @Parameter(required = false)
     private Set<String> excludes = ImmutableSet.of();
 
     /**
@@ -221,10 +196,7 @@ abstract class AbstractProtocMojo extends AbstractMojo {
      *
      * @since 0.3.0
      */
-    @Parameter(
-            required = true,
-            defaultValue = "${project.build.finalName}.protobin"
-    )
+    @Parameter(required = true, defaultValue = "${project.build.finalName}.protobin")
     private String descriptorSetFileName;
 
     /**
@@ -257,9 +229,7 @@ abstract class AbstractProtocMojo extends AbstractMojo {
      * at execution time. On UNIX the executable is a shell script and on
      * Windows it is a WinRun4J .exe and .ini.
      */
-    @Parameter(
-            required = false
-    )
+    @Parameter(required = false)
     private List<ProtocPlugin> protocPlugins;
 
     /**
@@ -270,10 +240,7 @@ abstract class AbstractProtocMojo extends AbstractMojo {
      *
      * <p>If the project is built on NFS it's recommended to set this parameter to {@code 10000}.
      */
-    @Parameter(
-            required = false,
-            defaultValue = "0"
-    )
+    @Parameter(required = false, defaultValue = "0")
     private long staleMillis;
 
     /**
@@ -319,9 +286,9 @@ abstract class AbstractProtocMojo extends AbstractMojo {
     /**
      * Executes the mojo.
      */
+    @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-
-        if (skipMojo()) {
+         if (skipMojo()) {
             return;
         }
 
@@ -356,10 +323,9 @@ abstract class AbstractProtocMojo extends AbstractMojo {
                         cleanDirectory(descriptorSetOutputDirectory);
                     }
 
-                    // FIXME: plugins support
-                    //if (protocPlugins != null) {
-                    //    createProtocPlugins();
-                    //}
+                    if (protocPlugins != null) {
+                        createProtocPlugins();
+                    }
 
                     //get toolchain from context
                     final Toolchain tc = toolchainManager.getToolchainFromBuildContext("protobuf", session); //NOI18N
@@ -441,13 +407,11 @@ abstract class AbstractProtocMojo extends AbstractMojo {
      *
      * @since 0.3.0
      */
-    /*
     // FIXME: plugins support
     protected void createProtocPlugins() throws MojoExecutionException {
         final String javaHome = detectJavaHome();
 
         for (final ProtocPlugin plugin : protocPlugins) {
-
             if (plugin.getJavaHome() != null) {
                 getLog().debug("Using javaHome defined in plugin definition: " + javaHome);
             } else {
@@ -456,17 +420,17 @@ abstract class AbstractProtocMojo extends AbstractMojo {
             }
 
             getLog().info("Building protoc plugin: " + plugin.getId());
+
+
             final ProtocPluginAssembler assembler = new ProtocPluginAssembler(
+                    pluginArtifacts,
                     plugin,
-                    repoSystem,
-                    repoSystemSession,
-                    remoteRepos,
                     protocPluginDirectory,
-                    getLog());
+                    getLog()
+            );
             assembler.execute();
         }
     }
-    */
 
     /**
      * Attempts to detect java home directory, using {@code jdk} toolchain if available,
@@ -537,12 +501,12 @@ abstract class AbstractProtocMojo extends AbstractMojo {
      * <p>Determine if the mojo execution should get skipped.</p>
      * This is the case if:
      * <ul>
-     * <li>{@link #skip} is <code>true</code></li>
+     * <li>{@link #skip} is {@code true}</li>
      * <li>if the mojo gets executed on a project with packaging type 'pom' and
-     * {@link #forceMojoExecution} is <code>false</code></li>
+     * {@link #forceMojoExecution} is {@code false}</li>
      * </ul>
      *
-     * @return <code>true</code> if the mojo execution should be skipped.
+     * @return {@code true} if the mojo execution should be skipped.
      *
      * @since 0.2.0
      */
@@ -560,7 +524,7 @@ abstract class AbstractProtocMojo extends AbstractMojo {
         return false;
     }
 
-    protected ImmutableSet<File> findGeneratedFilesInDirectory(final File directory) throws IOException {
+    protected static ImmutableSet<File> findGeneratedFilesInDirectory(final File directory) throws IOException {
         if (directory == null || !directory.isDirectory()) {
             return ImmutableSet.of();
         }
