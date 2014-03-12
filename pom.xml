@@ -7,28 +7,34 @@
     <packaging>maven-plugin</packaging>
     <name>Maven Protoc Plugin</name>
     <url>https://github.com/no-hope/maven-protoc-plugin</url>
+    <version>0.0.1-SNAPSHOT</version>
 
     <parent>
-        <groupId>org.no-hope</groupId>
-        <artifactId>java-toolkit-ci</artifactId>
-        <version>0.1.4-SNAPSHOT</version>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
     </parent>
 
-    <properties>
-        <maven.version>3.0</maven.version>
-        <plexus.version>1.5.5</plexus.version>
-        <plexus-utils.version>3.0.15</plexus-utils.version>
-        <aether.version>1.13.1</aether.version>
-        <plugin-tools.version>3.2</plugin-tools.version>
-        <skip.enforcer>true</skip.enforcer>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
-        <!--skip.enforcer>true</skip.enforcer-->
-        <plexus-build-api.version>0.0.7</plexus-build-api.version>
-        <maven.testing-harness-plugin.version>2.1</maven.testing-harness-plugin.version>
-        <maven.invoker-plugin.version>1.8</maven.invoker-plugin.version>
-    </properties>
+    <scm>
+        <url>git@github.com:no-hope/maven-protoc-plugin</url>
+        <connection>scm:git:git@github.com:no-hope/maven-protoc-plugin</connection>
+        <developerConnection>scm:git:git@github.com:no-hope/maven-protoc-plugin</developerConnection>
+    </scm>
 
     <developers>
+        <developer>
+            <id>ketoth.xupack</id>
+            <name>Ketoth Xupack</name>
+            <email>ketoth.xupack@gmail.com</email>
+        </developer>
         <developer>
             <id>gak</id>
             <name>Gregory Kick</name>
@@ -57,6 +63,28 @@
         </developer>
     </developers>
 
+    <properties>
+        <!-- env -->
+        <java.major.version>7</java.major.version>
+        <java.lang.level>1.${java.major.version}</java.lang.level>
+        <java.source.level>${java.lang.level}</java.source.level>
+        <java.target.level>${java.lang.level}</java.target.level>
+        <java.compiler.version>${java.lang.level}</java.compiler.version>
+
+        <maven.version>3.0</maven.version>
+        <maven.testing-harness-plugin.version>2.1</maven.testing-harness-plugin.version>
+        <maven.invoker-plugin.version>1.8</maven.invoker-plugin.version>
+        <maven.surefire-plugin.version>2.16</maven.surefire-plugin.version>
+        <maven.compiler-plugin.version>3.1</maven.compiler-plugin.version>
+
+        <aether.version>1.13.1</aether.version>
+        <junit.version>4.11</junit.version>
+        <plexus.version>1.5.5</plexus.version>
+        <plexus-build-api.version>0.0.7</plexus-build-api.version>
+        <plexus-utils.version>3.0.15</plexus-utils.version>
+        <plugin-tools.version>3.2</plugin-tools.version>
+    </properties>
+
     <contributors>
         <contributor>
             <name>Paul Nyheim (pnyheim)</name>
@@ -67,11 +95,6 @@
             <timezone>-6</timezone>
         </contributor>
     </contributors>
-
-    <scm>
-        <connection>scm:git:git://github.com/no-hope/maven-protoc-plugin.git</connection>
-        <tag>HEAD</tag>
-    </scm>
 
     <build>
         <pluginManagement>
@@ -144,16 +167,24 @@
                 </executions>
             </plugin>
 
-            <!--
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-release-plugin</artifactId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven.compiler-plugin.version}</version>
                 <configuration>
-                    <!- Enforce integration tests during release ->
-                    <arguments>-P run-its</arguments>
+                    <source>${java.source.level}</source>
+                    <target>${java.target.level}</target>
+                    <compilerVersion>${java.compiler.version}</compilerVersion>
+                    <showDeprecation>true</showDeprecation>
+                    <showWarnings>true</showWarnings>
+
+                    <compilerArgument>-Xlint:unchecked</compilerArgument>
+
+                    <debug>true</debug>
+                    <optimize>false</optimize>
+                    <debuglevel>vars,lines,source</debuglevel>
                 </configuration>
             </plugin>
-            -->
 
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -411,6 +442,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
